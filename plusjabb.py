@@ -16,7 +16,7 @@ class XMPPHandler(webapp.RequestHandler):
 	def post(self):
 		message = xmpp.Message(self.request.POST)
 		logging.info(message.body)
-		if message.body[0:2].lower() == 'f:': # Friends user follows
+		if message.body[0:2].lower() == 'f:' or message.body[0:2].lower() == 'f ': # Friends user follows
 			message.reply(self.doFetchFriends(message.body[2:]), raw_xml=False)
 	
 	def doFetchFriends(self, plus_id):
@@ -45,8 +45,12 @@ class XMPPHandler(webapp.RequestHandler):
 		#	logging.info('Decoded JSON: %s' % str(decoded_json))
 		
 		friends = decoded_json[0][0][2]
+		friends_count = len(friends)
 
-		logging.debug('Number of friends ('+plus_id+'): ' + str(len(friends)))
+		logging.debug('Number of friends ('+plus_id+'): ' + str(friends_count))
+
+		if friends_count == 0:
+			return "Can't fetch list of friends. Public access restricted?"
 
 		count = 0
 		respond = ""
@@ -62,8 +66,8 @@ class XMPPHandler(webapp.RequestHandler):
 			respond += friend[2][0] + ' (https://plus.google.com/' + friend[0][2] + '/about)\n'
 			#respond += '<a href="https://plus.google.com/'+friend[0][2]+'/about">'+friend[2][0]+ '</a><br/>'
 
-		if len(friends) > 10:
-			respond += '... and ' + str((len(friends) - 10)) + ' more.'
+		if friends_count > 10:
+			respond += '... and ' + str((friends_count - 10)) + ' more.'
 		
 		return respond #'<body>' + respond + '</body>'
 
