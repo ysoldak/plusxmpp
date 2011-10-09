@@ -1,11 +1,12 @@
-application: ysbots
+application: plusxmpp
 version: 1
 runtime: python
 api_version: 1
 
 handlers:
 - url: /.*
-  script: plusjabb.py
+  script: plusxmpp.py
+  login: admin
 
 inbound_services:
 - xmpp_message
