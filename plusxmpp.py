@@ -18,6 +18,8 @@ class XMPPHandler(webapp.RequestHandler):
 		logging.info(message.body)
 		if message.body[0:2].lower() == 'f:' or message.body[0:2].lower() == 'f ': # Friends user follows
 			message.reply(self.doFetchFriends(message.body[2:]), raw_xml=False)
+		else if message.body[0:2].lower() == 'l:' or message.body[0:2].lower() == 'l ': # latest posts
+			message.reply(self.doFetchFriends(message.body[2:]), raw_xml=False)
 	
 	def doFetchFriends(self, plus_id):
 		url = 'https://plus.google.com/_/socialgraph/lookup/visible/?o=%5Bnull%2Cnull%2C%22'+plus_id+'%22%5D&_reqid=5582440&rt=j'

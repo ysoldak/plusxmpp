@@ -1,0 +1,4 @@
+cron:
+- description: every 60 mins
+  url: /fetch/posts
+  schedule: every 60 mins
