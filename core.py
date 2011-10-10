@@ -50,10 +50,14 @@ def getFriendsIds(plus_id):
 
 def getFriends(plus_id):
 	data = memcache.get("friends_message_"+plus_id)
-	if data is None:
-		pf.friends(plus_id)
-	data = memcache.get("friends_message_"+plus_id)
-	return data
+	if data is not None:
+		return data
+	else:
+		ids = pf.friends(plus_id)
+		if len(ids) == 0:
+			return "Can't fetch list of friends. Public access restricted?"
+		else:
+			return memcache.get("friends_message_"+plus_id)
 
 def getLatest(plus_id, timestamp):
 	friend_ids = getFriendsIds(plus_id)

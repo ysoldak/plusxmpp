@@ -23,7 +23,7 @@ def friends(plus_id):
 
 	if result.status_code != 200:
 		logging.error('Unexpected status code: %d' % result.status_code)
-		return "Can't fetch friends list."
+		return []
 
 	received_content = result.content
 	txt = received_content[5:]
@@ -45,7 +45,7 @@ def friends(plus_id):
 	logging.debug('count: ' + str(friends_count))
 
 	if friends_count == 0:
-		return "Can't fetch list of friends. Public access restricted?"
+		return []
 
 	count = 0
 	respond = ""
