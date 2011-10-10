@@ -59,12 +59,12 @@ class XMPPHandler(webapp.RequestHandler):
 
 		if message.body.lower() == 'on': # make user active
 			if core.enableUser(jid):
-				message.reply("Feed enabled!", raw_xml=False)
+				message.reply("Delivery enabled!", raw_xml=False)
 			return
 
 		if message.body.lower() == 'off': # make user active
 			if core.disableUser(jid):
-				message.reply("Feed disabled!", raw_xml=False)
+				message.reply("Delivery disabled!", raw_xml=False)
 			return
 
 		if message.body.lower() == 't': # test
