@@ -130,22 +130,22 @@ def posts(plus_id, timestamp, max_count):
 			elif post[4]:
 				desc = post[4]
 
-			if post[44]:
-				desc = desc + ' <br/><br/><a href="https://plus.google.com/' + post[44][1] + '">' + post[44][0] + '</a> originally shared this post: ';
+			# if post[44]:
+			# 	desc = desc + ' <br/><br/><a href="https://plus.google.com/' + post[44][1] + '">' + post[44][0] + '</a> originally shared this post: ';
 
-			if post[66]:
+			# if post[66]:
 
-				if post[66][0][1]:
-					desc = desc + ' <br/><br/><a href="' + post[66][0][1] + '">' + post[66][0][3] + '</a>'
+			# 	if post[66][0][1]:
+			# 		desc = desc + ' <br/><br/><a href="' + post[66][0][1] + '">' + post[66][0][3] + '</a>'
 
-				if post[66][0][6]:
-					if post[66][0][6][0][1].find('image') > -1:
-						desc = desc + ' <p><img src="http:' + post[66][0][6][0][2] + '"/></p>'
-					else:
-						try:
-							desc = desc + ' <a href="' + post[66][0][6][0][8] + '">' + post[66][0][6][0][8] + '</a>'
-						except:
-							sys.exc_clear()
+			# 	if post[66][0][6]:
+			# 		if post[66][0][6][0][1].find('image') > -1:
+			# 			desc = desc + ' <p><img src="http:' + post[66][0][6][0][2] + '"/></p>'
+			# 		else:
+			# 			try:
+			# 				desc = desc + ' <a href="' + post[66][0][6][0][8] + '">' + post[66][0][6][0][8] + '</a>'
+			# 			except:
+			# 				sys.exc_clear()
 
 			if desc == '':
 				desc = permalink
@@ -164,7 +164,7 @@ def posts(plus_id, timestamp, max_count):
 			if sentend < 5 or sentend > 75:
 				sentend = 75
 
-			output += author + ' @ ' + dt.strftime('%Y-%m-%d') + '\n'
+			output += author + ' @ ' + dt.strftime('%Y-%m-%d %H:%M:%S') + '\n'
 			output += escape(ptitle[:sentend]) + '\n'
 			output += permalink + '\n\n'
 
