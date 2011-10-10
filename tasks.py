@@ -1,16 +1,20 @@
 import time
+import logging
 
 from google.appengine.api import xmpp
 
 import core
 import datamodel as dm
 
+LIMIT = 100
+
 def taskFetchPosts():
 	q = dm.User.all()
 	q.filter("active =", True)
-	users = q.fetch(5)
+	users = q.fetch(LIMIT)
 	timestamp = time.time() - core.CYCLE
 	for user in users:
+		logging.debug("Fetching posts for: " + user.jid + " / " + user.plus_id)
 		output = core.getLatest(user.plus_id, timestamp)
 		if output is not None and output != '':
 			#chat_message_sent = False
