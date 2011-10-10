@@ -21,6 +21,11 @@ def setUser(jid, plus_id):
 	memcache.delete("friends_message_"+plus_id)
 	return user
 
+def delUser(jid):
+	user = getUser(jid)
+	if user is not None:
+		user.delete()
+
 def getFriendsIds(plus_id):
 	data = memcache.get("friends_ids_"+plus_id)
 	if data is None:

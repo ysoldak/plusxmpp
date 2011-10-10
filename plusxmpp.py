@@ -11,18 +11,37 @@ import core
 import tasks
 
 class XMPPHandler(webapp.RequestHandler):
-	def post(self):
+	def post(self, url):
+		jid = self.request.get('from').split('/')[0]
+		logging.debug("Message from jid: '"+jid+"'")
+		logging.debug("Message at url: '"+url+"'")
+
+		if url == 'subscription/subscribe/':
+			xmpp.send_message(jid, "Welcome to PlusXMPP service.\nPlease, send me your +id in the form:\nplus 1234567890")
+			return
+
+		if url == 'subscription/unsubscribe/':
+			core.delUser(jid)
+			return
+
+		if url != 'message/chat/':
+			return
+
+		body = self.request.get('body')
+		if body is None:
+			logging.debug("Request w/o body. Stopped.")
+			return
+
 		message = xmpp.Message(self.request.POST)
 
-		logging.debug("jid:"+message.sender)
-		logging.debug("body:"+message.body)
+		logging.debug("Message body: '"+message.body+"'")
 
 		if message.body[0:5].lower() == 'plus ':
-			core.setUser(message.sender, message.body[5:])
+			core.setUser(jid, message.body[5:])
 			message.reply("Subscribed!")
 			return
 
-		user = core.getUser(message.sender)
+		user = core.getUser(jid)
 		if user is None:
 			message.reply("Welcome to PlusXMPP service.\nPlease, send me your +id in the form:\nplus 1234567890")
 			return
@@ -50,7 +69,7 @@ class TaskHandler(webapp.RequestHandler):
 	def post(self): # touched by task queue
 		tasks.taskFetchPosts()
 
-application = webapp.WSGIApplication([('/_ah/xmpp/message/chat/', XMPPHandler),('/fetch/posts', TaskHandler)],debug=True)
+application = webapp.WSGIApplication([(r'/_ah/xmpp/(.*)', XMPPHandler),('/fetch/posts', TaskHandler)],debug=True)
 
 def main():
 	run_wsgi_app(application)
