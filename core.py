@@ -26,6 +26,22 @@ def delUser(jid):
 	if user is not None:
 		user.delete()
 
+def enableUser(jid):
+	user = getUser(jid)
+	if user is not None:
+		user.active = True
+		user.put()
+		return True
+	return False
+
+def disableUser(jid):
+	user = getUser(jid)
+	if user is not None:
+		user.active = False
+		user.put()
+		return True
+	return False
+
 def getFriendsIds(plus_id):
 	data = memcache.get("friends_ids_"+plus_id)
 	if data is None:

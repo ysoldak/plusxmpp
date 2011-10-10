@@ -46,20 +46,32 @@ class XMPPHandler(webapp.RequestHandler):
 			message.reply("Welcome to PlusXMPP service.\nPlease, send me your +id in the form:\nplus 1234567890")
 			return
 
-		if message.body.lower() == 'f': # friends user follows
+		if message.body.lower() == 'f' or message.body.lower() == 'friends': # friends user follows
 			message.reply(core.getFriends(user.plus_id), raw_xml=False)
 			return
 
-		if message.body.lower() == 'l': # latest (cached) posts
+		if message.body.lower() == 'last' or message.body.lower() == 'latest': # latest (cached) posts
 			posts = core.getLatest(user.plus_id, -1)
 			if posts is None or posts == '':
 				posts = "No new posts found."
 			message.reply(posts, raw_xml=False)
 			return
 
+		if message.body.lower() == 'on': # make user active
+			if core.enableUser(jid):
+				message.reply("Feed enabled!", raw_xml=False)
+			return
+
+		if message.body.lower() == 'off': # make user active
+			if core.disableUser(jid):
+				message.reply("Feed disabled!", raw_xml=False)
+			return
+
 		if message.body.lower() == 't': # test
 			message.reply(str(time.time()), raw_xml=False)
 			return
+
+		message.reply("Usage (command - description):\nfriends - short list of users in your circles\nlast - repeat last posts message\non - turn updates delivery on\noff - turn updates delivery off")
 
 class TaskHandler(webapp.RequestHandler):
 
