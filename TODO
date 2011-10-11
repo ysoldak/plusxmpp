@@ -12,4 +12,4 @@ TODO
 -- disable debug helps?
 
 FIXME
-- repeats messages sometimes (timestamp comparison problem?)
+- repeats messages sometimes (timestamp comparison problem?) -- hope this is fixed now, will monitor and remove this line if really fixed.

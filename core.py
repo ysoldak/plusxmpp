@@ -60,13 +60,14 @@ def getFriends(plus_id):
 			return memcache.get("friends_message_"+plus_id)
 
 def getLatest(plus_id, timestamp):
+	cache_expire_timestamp = timestamp + CYCLE * 2 - 10 # next fetching time minus 10 seconds
 	friend_ids = getFriendsIds(plus_id)
 	output = ''
 	for friend_id in friend_ids:
 		posts = memcache.get("posts_data_" + friend_id)
 		if posts is None and timestamp >= 0:
 			posts = pf.posts(friend_id, timestamp, 10)
-			memcache.set('posts_data_' + friend_id, posts, CYCLE)
+			memcache.set('posts_data_' + friend_id, posts, cache_expire_timestamp)
 		if posts is not None and posts != '':
 			output += posts
 	return output
