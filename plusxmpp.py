@@ -14,7 +14,7 @@ import tasks
 import datamodel as dm
 
 OWNER_JID = "ysoldak@gmail.com"
-DESCRIPTION = "PlusXMPP notifies you about new public posts in your Google+ stream.\nTo reach the bot owner with your feedback just send a message to the user: '"+OWNER_JID+"'\n"
+DESCRIPTION = "PlusXMPP notifies you about new public posts from people in your Google+ circles.\nSend feedback to this jabber account: '"+OWNER_JID+"'\n"
 
 class XMPPHandler(webapp.RequestHandler):
 	def post(self, url):
