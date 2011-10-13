@@ -74,15 +74,15 @@ def posts(plus_id, timestamp, max_count):
 	
 	url = 'https://plus.google.com/_/stream/getactivities/' + plus_id + '/?sp=[1,2,"' + plus_id + '",null,null,null,null,"social.google.com",[]]'
 	result = ''
-
+	
 	try:
 		result = urlfetch.fetch(url, deadline=10)
 	except urlfetch.Error:
 		return ''
-
+		
 	if result.status_code != 200:
 		return ''
-
+		
 	txt = result.content
 	txt = txt[5:]
 	txt = commas.sub(',null,',txt)
@@ -90,66 +90,66 @@ def posts(plus_id, timestamp, max_count):
 	txt = txt.replace('[,','[null,')
 	txt = txt.replace(',]',',null]')
 	obj = simplejson.loads(txt)
-
+	
 	posts = obj[1][0]
-
+	
 	output = ''
-
+	
 	if posts:
-
+		
 		author = posts[0][3]
 		updated_ts = float(posts[0][5])/1000
-		logging.debug("up_ts = "+str(updated_ts))
+		#logging.debug("up_ts = "+str(updated_ts))
 		updated = datetime.fromtimestamp(updated_ts)
-
+		
 		if timestamp is not None and timestamp != 0 and updated_ts < timestamp:
 			return ''
-
+			
 		count = 0
-
+		
 		for post in posts:
-
+			
 			count = count + 1
 			if max_count is not None and max_count != 0 and count > max_count:
 				break
-
+				
 			dt_ts = float(post[5])/1000
-			logging.debug("dt_ts = "+str(dt_ts))
+			#logging.debug("dt_ts = "+str(dt_ts))
 			dt = datetime.fromtimestamp(dt_ts)
 			if timestamp is not None and timestamp != 0 and dt_ts < timestamp:
 				break
-
+				
 			id = post[21]
 			permalink = "https://plus.google.com/" + post[21]
-
+			
 			desc = ''
-
+			
 			if post[47]:
 				desc = post[47]
 			elif post[4]:
 				desc = post[4]
-
+				
 			if desc == '':
 				desc = permalink
-
+				
 			ptitle = htmldecode(desc)
 			ptitle = remtags.sub(' ', ptitle)
 			ptitle = remspaces.sub(' ', ptitle)
-
+			
 			sentend = 75
-
+			
 			m = se_break.split(ptitle)
 			if m:
 				sentend = len(m[0]) + 1
-
+				
 			if sentend < 5 or sentend > 75:
 				sentend = 75
-
+				
 			#output += author + ' @ ' + dt.strftime('%Y-%m-%d %H:%M:%S (UTC)') + '\n'
 			output += author + ' @ ' + str(int((just_now - dt_ts)/60)) + ' mins ago\n'
 			output += escape(ptitle[:sentend]) + '\n'
 			output += permalink + '\n\n'
-
+			
 	return output
 
 def htmldecode(text):
