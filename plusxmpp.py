@@ -71,7 +71,7 @@ class XMPPHandler(webapp.RequestHandler):
 			return
 
 		if message.body.lower() == 'off': # make user active
-			if core.disable_user(jid):
+			if dm.disable_user(jid):
 				message.reply("Delivery disabled!", raw_xml=False)
 			return
 
