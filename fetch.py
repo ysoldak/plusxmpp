@@ -16,9 +16,9 @@ se_break = re.compile('[.!?:]\s+', re.VERBOSE)
 charrefpat = re.compile(r'&(#(\d+|x[\da-fA-F]+)|[\w.:-]+);?')
 
 def friends(plus_id):
-	logging.debug("plusfetcher.friends: " + plus_id)
+	logging.debug("Fetch friends: " + plus_id)
 	url = 'https://plus.google.com/_/socialgraph/lookup/visible/?o=%5Bnull%2Cnull%2C%22'+plus_id+'%22%5D&_reqid=5582440&rt=j'
-	logging.debug("url: "+url)
+	#logging.debug("url: "+url)
 	result = urlfetch.fetch(url)
 	
 	if result.status_code != 200:
@@ -42,7 +42,7 @@ def friends(plus_id):
 	friends = decoded_json[0][0][2]
 	friends_count = len(friends)
 
-	logging.debug('count: ' + str(friends_count))
+	logging.debug('Friends count: ' + str(friends_count))
 
 	if friends_count == 0:
 		return {'ids':[], 'message':'Can\'t fetch friends list. Public access restricted?'}
@@ -68,7 +68,7 @@ def friends(plus_id):
 
 # code in this method is based on plusfeed project
 def posts(plus_id, timestamp, max_count):
-	logging.debug("plusfetcher.posts: " + plus_id + ", " + str(timestamp) + ", " + str(max_count))
+	#logging.debug("Fetch posts: " + plus_id + ", " + str(timestamp) + ", " + str(max_count))
 	
 	just_now = time.time()
 	
@@ -109,14 +109,14 @@ def posts(plus_id, timestamp, max_count):
 		
 		for post in posts:
 			
-			count = count + 1
-			if max_count is not None and max_count != 0 and count > max_count:
-				break
-				
 			dt_ts = float(post[5])/1000
 			#logging.debug("dt_ts = "+str(dt_ts))
 			dt = datetime.fromtimestamp(dt_ts)
 			if timestamp is not None and timestamp != 0 and dt_ts < timestamp:
+				break
+				
+			count = count + 1
+			if max_count is not None and max_count != 0 and count > max_count:
 				break
 				
 			id = post[21]
@@ -149,7 +149,9 @@ def posts(plus_id, timestamp, max_count):
 			output += author + ' @ ' + str(int((just_now - dt_ts)/60)) + ' mins ago\n'
 			output += escape(ptitle[:sentend]) + '\n'
 			output += permalink + '\n\n'
-			
+		
+		logging.debug("Fetched posts " + plus_id + ": " + str(count))
+	
 	return output
 
 def htmldecode(text):
