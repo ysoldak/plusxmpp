@@ -3,6 +3,7 @@ Feel free to fork and try to implement these features and fixes
 TODO
 - sending xhtml formated messages
 - implement alternative posts fetcher based on G+ API (they have restrictions, but this can be more efficient)
+-- theoretically this enables us to fetch non-public posts (OAuth needed for this also)
 - "show comments" command
 - user's time zone support for post timestamps (can be automatic using xmpp or ask user to define tz?)
 - making +1, posting comments and new posts (authentication will be requred, OAuth?)
