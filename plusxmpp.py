@@ -13,20 +13,24 @@ import core
 import tasks
 import datamodel as dm
 
+OWNER_JID = "ysoldak@gmail.com"
+DESCRIPTION = "PlusXMPP notifies you about new public posts in your Google+ stream.\nTo reach the bot owner with your feedback just send a message to the user: '"+OWNER_JID+"'\n"
+
 class XMPPHandler(webapp.RequestHandler):
 	def post(self, url):
 		jid = self.request.get('from').split('/')[0]
 		logging.debug("Message from jid: '"+jid+"'")
 		logging.debug("Message at url: '"+url+"'")
-
-		if url == 'subscription/subscribe/':
-			xmpp.send_message(jid, "Welcome to PlusXMPP service.\nPlease, send me your +id in the form:\nplus 1234567890")
-			return
-
+		
 		if url == 'subscription/unsubscribe/':
-			core.delUser(jid)
+			dm.del_user(jid)
 			return
-
+		
+		if url == 'subscription/subscribe/':
+			self.welcome(jid)
+			return
+		
+			
 		if url != 'message/chat/':
 			return
 
@@ -46,7 +50,7 @@ class XMPPHandler(webapp.RequestHandler):
 
 		user = dm.get_user(jid)
 		if user is None:
-			message.reply("Welcome to PlusXMPP service.\nPlease, send me your +id in the form:\nplus 1234567890")
+			self.welcome(jid)
 			return
 
 		if message.body.lower() == 'f' or message.body.lower() == 'friends': # friends user follows
@@ -74,8 +78,16 @@ class XMPPHandler(webapp.RequestHandler):
 		if message.body.lower() == 't': # test
 			message.reply(str(time.time()), raw_xml=False)
 			return
+		
+		self.help(message)
+		
+	def welcome(self, jid):
+		xmpp.send_message(jid, "Welcome to PlusXMPP service.\n"+DESCRIPTION+"\nTo start, please, send me your +id in the form:\nplus 1234567890")
+	
+	def help(self, message):
+		message.reply(DESCRIPTION + "\nAvailable commands (command - description):\nfriends - short list of users in your circles\nlast - repeat last posts message\non - turn updates delivery on\noff - turn updates delivery off")
+	
 
-		message.reply("Usage (command - description):\nfriends - short list of users in your circles\nlast - repeat last posts message\non - turn updates delivery on\noff - turn updates delivery off")
 
 class TaskHandler(webapp.RequestHandler):
 
