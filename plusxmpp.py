@@ -7,8 +7,11 @@ from google.appengine.ext import db
 from google.appengine.api import taskqueue
 from google.appengine.ext.webapp.util import run_wsgi_app
 
+from google.appengine.api import memcache
+
 import core
 import tasks
+import datamodel as dm
 
 class XMPPHandler(webapp.RequestHandler):
 	def post(self, url):
@@ -37,33 +40,34 @@ class XMPPHandler(webapp.RequestHandler):
 		logging.debug("Message body: '"+message.body+"'")
 
 		if message.body[0:5].lower() == 'plus ':
-			core.setUser(jid, message.body[5:])
+			core.init(jid, message.body[5:])
 			message.reply("Subscribed!")
 			return
 
-		user = core.getUser(jid)
+		user = dm.get_user(jid)
 		if user is None:
 			message.reply("Welcome to PlusXMPP service.\nPlease, send me your +id in the form:\nplus 1234567890")
 			return
 
 		if message.body.lower() == 'f' or message.body.lower() == 'friends': # friends user follows
-			message.reply(core.getFriends(user.plus_id), raw_xml=False)
+			message.reply(core.get_friends(user.plus_id)['message'], raw_xml=False)
 			return
 
 		if message.body.lower() == 'last' or message.body.lower() == 'latest': # latest (cached) posts
-			posts = core.getLatest(user.plus_id, -1)
-			if posts is None or posts == '':
-				posts = "No new posts found."
-			message.reply(posts, raw_xml=False)
+			last = memcache.get("last_" + jid)
+			if last is None:
+				message.reply("No last posts message found.", raw_xml=False)
+			else:
+				message.reply(last, raw_xml=False)
 			return
 
 		if message.body.lower() == 'on': # make user active
-			if core.enableUser(jid):
+			if dm.enable_user(jid):
 				message.reply("Delivery enabled!", raw_xml=False)
 			return
 
 		if message.body.lower() == 'off': # make user active
-			if core.disableUser(jid):
+			if core.disable_user(jid):
 				message.reply("Delivery disabled!", raw_xml=False)
 			return
 
@@ -79,7 +83,7 @@ class TaskHandler(webapp.RequestHandler):
 		taskqueue.add(url='/fetch/posts', params={})
 
 	def post(self): # touched by task queue
-		tasks.taskFetchPosts()
+		tasks.fetch_posts()
 
 application = webapp.WSGIApplication([(r'/_ah/xmpp/(.*)', XMPPHandler),('/fetch/posts', TaskHandler)],debug=True)
 

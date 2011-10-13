@@ -1,73 +1,76 @@
+import logging
+
 from google.appengine.api import memcache
 
 import datamodel as dm
-import fetcher as pf
+import fetch
 
-CYCLE = 60*60
+CYCLE = 60 * 60
+POST_LIMIT = 10
+MAX_SKIP_CYCLES = 24
 
-def getUser(jid):
-	q = dm.User.all()
-	q.filter("jid =", jid)
-	return q.get()
+def init(jid, plus_id):
+	dm.set_user(jid, plus_id)
+	memcache.delete("friends_" + plus_id)
 
-def setUser(jid, plus_id):
-	user = getUser(jid)
-	if user is not None:
-		user.plus_id = plus_id
-	else:
-		user = dm.User(jid=jid, plus_id=plus_id, active=True)
-	user.put()
-	memcache.delete("friends_ids_"+plus_id)
-	memcache.delete("friends_message_"+plus_id)
-	return user
+# === Friends ===
 
-def delUser(jid):
-	user = getUser(jid)
-	if user is not None:
-		user.delete()
-
-def enableUser(jid):
-	user = getUser(jid)
-	if user is not None:
-		user.active = True
-		user.put()
-		return True
-	return False
-
-def disableUser(jid):
-	user = getUser(jid)
-	if user is not None:
-		user.active = False
-		user.put()
-		return True
-	return False
-
-def getFriendsIds(plus_id):
-	data = memcache.get("friends_ids_"+plus_id)
+def get_friends(plus_id):
+	data = memcache.get("friends_" + plus_id)
 	if data is None:
-		data = pf.friends(plus_id)
+		data = fetch.friends(plus_id)
+		memcache.set("friends_"+plus_id, data, MAX_SKIP_CYCLES * CYCLE)
 	return data
 
-def getFriends(plus_id):
-	data = memcache.get("friends_message_"+plus_id)
-	if data is not None:
-		return data
-	else:
-		ids = pf.friends(plus_id)
-		if len(ids) == 0:
-			return "Can't fetch list of friends. Public access restricted?"
-		else:
-			return memcache.get("friends_message_"+plus_id)
 
-def getLatest(plus_id, timestamp):
-	cache_expire_timestamp = timestamp + CYCLE * 2 - 10 # next fetching time minus 10 seconds
-	friend_ids = getFriendsIds(plus_id)
+# === Stream ===
+
+def get_stream(plus_id, timestamp):
+	friends = get_friends(plus_id)
 	output = ''
-	for friend_id in friend_ids:
-		posts = memcache.get("posts_data_" + friend_id)
-		if posts is None and timestamp >= 0:
-			posts = pf.posts(friend_id, timestamp, 10)
-			memcache.set('posts_data_' + friend_id, posts, cache_expire_timestamp)
-		if posts is not None and posts != '':
+	for friend_id in friends['ids']:
+		posts = get_posts(friend_id, timestamp)
+		if posts != '':
 			output += posts
 	return output
+
+def get_posts(plus_id, timestamp):
+	posts = memcache.get("posts_" + plus_id)
+	if posts is None: # falls here only once during the fetch cycle
+		status = get_status(plus_id)
+		if status['ts'] is not None and (status['ts'] + CYCLE * status['freq'] - 60) > timestamp: # "-60" in case GAE doesn't run cron sharp at time
+			return ''
+		oldest = timestamp - status['freq'] * CYCLE + 1 # "+1" to ensure we don't harvest any already processed post
+		posts = fetch.posts(plus_id, oldest, POST_LIMIT)
+		status = update_status(plus_id, posts != '', timestamp)
+		memcache.set('posts_' + plus_id, posts, timestamp + CYCLE - 2) # "-2" to ensure the cache is expired before next fetch cycle
+	return posts
+
+def get_status(plus_id):
+	status = memcache.get("status_" + plus_id)
+	if status is None:
+		status = {'ts':None, 'freq':1}
+	logging.debug("Get status for '" + plus_id + "': " + str(status))
+	return status
+
+def update_status(plus_id, has_new, timestamp):
+	status = get_status(plus_id)
+	
+	freq = status['freq']
+	
+	if has_new:
+		freq = 1 # fetch plus account posts on next cycle if harvested at least one post during this cycle
+	else:
+		freq *= 2 # otherwise postpone the fetch gradually to maximum (once a day for now)
+		if freq > MAX_SKIP_CYCLES:
+			freq = MAX_SKIP_CYCLES
+	
+	status['ts'] = timestamp
+	status['freq'] = freq
+	
+	logging.debug("Set status for '" + plus_id + "': " + str(status))
+	
+	memcache.set("status_" + plus_id, status)
+	
+	return freq
+

@@ -1,12 +1,12 @@
 import logging
 import re
+import time
 from datetime import datetime
 from htmlentitydefs import name2codepoint
 from cgi import escape
 
 from django.utils import simplejson
 
-from google.appengine.api import memcache
 from google.appengine.api import urlfetch
 
 remtags = re.compile(r'<.*?>')
@@ -20,32 +20,32 @@ def friends(plus_id):
 	url = 'https://plus.google.com/_/socialgraph/lookup/visible/?o=%5Bnull%2Cnull%2C%22'+plus_id+'%22%5D&_reqid=5582440&rt=j'
 	logging.debug("url: "+url)
 	result = urlfetch.fetch(url)
-
+	
 	if result.status_code != 200:
 		logging.error('Unexpected status code: %d' % result.status_code)
-		return []
-
+		return {'ids':[], 'message':'Can\'t fetch friends list. Internal error.'}
+	
 	received_content = result.content
 	txt = received_content[5:]
 	txt = commas.sub(',null,',txt)
 	txt = commas.sub(',null,',txt)
 	txt = txt.replace('[,','[null,')
 	txt = txt.replace(',]',',null]')
-
+	
 	json_decoder = simplejson.decoder.JSONDecoder()
 	try:
 		decoded_json = json_decoder.decode(txt)
 	except ValueError:
 		logging.error("Can't parse data")
-		return "Can't fetch friends list."
-
+		return {'ids':[], 'message':'Can\'t fetch friends list. Internal error.'}
+	
 	friends = decoded_json[0][0][2]
 	friends_count = len(friends)
 
 	logging.debug('count: ' + str(friends_count))
 
 	if friends_count == 0:
-		return []
+		return {'ids':[], 'message':'Can\'t fetch friends list. Public access restricted?'}
 
 	count = 0
 	respond = ""
@@ -64,25 +64,24 @@ def friends(plus_id):
 	if friends_count > 10:
 		respond += '... and ' + str((friends_count - 10)) + ' more.'
 
-	memcache.add("friends_ids_"+plus_id, ids, 24 * 60 * 60)
-	memcache.add("friends_message_"+plus_id, respond, 24 * 60 * 60)
-
-	return ids
+	return {'ids':ids, 'message':respond}
 
 # code in this method is based on plusfeed project
 def posts(plus_id, timestamp, max_count):
 	logging.debug("plusfetcher.posts: " + plus_id + ", " + str(timestamp) + ", " + str(max_count))
-
+	
+	just_now = time.time()
+	
 	url = 'https://plus.google.com/_/stream/getactivities/' + plus_id + '/?sp=[1,2,"' + plus_id + '",null,null,null,null,"social.google.com",[]]'
 	result = ''
 
 	try:
 		result = urlfetch.fetch(url, deadline=10)
 	except urlfetch.Error:
-		return
+		return ''
 
 	if result.status_code != 200:
-		return
+		return ''
 
 	txt = result.content
 	txt = txt[5:]
@@ -104,7 +103,7 @@ def posts(plus_id, timestamp, max_count):
 		updated = datetime.fromtimestamp(updated_ts)
 
 		if timestamp is not None and timestamp != 0 and updated_ts < timestamp:
-			return
+			return ''
 
 		count = 0
 
@@ -130,26 +129,8 @@ def posts(plus_id, timestamp, max_count):
 			elif post[4]:
 				desc = post[4]
 
-			# if post[44]:
-			# 	desc = desc + ' <br/><br/><a href="https://plus.google.com/' + post[44][1] + '">' + post[44][0] + '</a> originally shared this post: ';
-
-			# if post[66]:
-
-			# 	if post[66][0][1]:
-			# 		desc = desc + ' <br/><br/><a href="' + post[66][0][1] + '">' + post[66][0][3] + '</a>'
-
-			# 	if post[66][0][6]:
-			# 		if post[66][0][6][0][1].find('image') > -1:
-			# 			desc = desc + ' <p><img src="http:' + post[66][0][6][0][2] + '"/></p>'
-			# 		else:
-			# 			try:
-			# 				desc = desc + ' <a href="' + post[66][0][6][0][8] + '">' + post[66][0][6][0][8] + '</a>'
-			# 			except:
-			# 				sys.exc_clear()
-
 			if desc == '':
 				desc = permalink
-
 
 			ptitle = htmldecode(desc)
 			ptitle = remtags.sub(' ', ptitle)
@@ -164,29 +145,29 @@ def posts(plus_id, timestamp, max_count):
 			if sentend < 5 or sentend > 75:
 				sentend = 75
 
-			output += author + ' @ ' + dt.strftime('%Y-%m-%d %H:%M:%S') + '\n'
+			#output += author + ' @ ' + dt.strftime('%Y-%m-%d %H:%M:%S (UTC)') + '\n'
+			output += author + ' @ ' + str(int((just_now - dt_ts)/60)) + ' mins ago\n'
 			output += escape(ptitle[:sentend]) + '\n'
 			output += permalink + '\n\n'
 
 	return output
 
 def htmldecode(text):
-
-		if type(text) is unicode:
-			uchr = unichr
-
+	
+	if type(text) is unicode:
+		uchr = unichr
+	else:
+		uchr = lambda value: value > 255 and unichr(value) or chr(value)
+		
+	def entitydecode(match, uchr=uchr):
+		entity = match.group(1)
+		if entity.startswith('#x'):
+			return uchr(int(entity[2:], 16))
+		elif entity.startswith('#'):
+			return uchr(int(entity[1:]))
+		elif entity in name2codepoint:
+			return uchr(name2codepoint[entity])
 		else:
-			uchr = lambda value: value > 255 and unichr(value) or chr(value)
-
-		def entitydecode(match, uchr=uchr):
-			entity = match.group(1)
-			if entity.startswith('#x'):
-				return uchr(int(entity[2:], 16))
-			elif entity.startswith('#'):
-				return uchr(int(entity[1:]))
-			elif entity in name2codepoint:
-				return uchr(name2codepoint[entity])
-			else:
-				return match.group(0)
-
-		return charrefpat.sub(entitydecode, text)
+			return match.group(0)
+	
+	return charrefpat.sub(entitydecode, text) 
