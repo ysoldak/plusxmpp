@@ -26,10 +26,10 @@ class XMPPHandler(webapp.RequestHandler):
 			dm.del_user(jid)
 			return
 		
-		if url == 'subscription/subscribe/':
-			self.welcome(jid)
-			return
-		
+		# Commented out to avoid multiple welcome messages, some clients send several subscribe events
+		# if url == 'subscription/subscribe/':
+		# 	self.welcome(jid)
+		# 	return
 			
 		if url != 'message/chat/':
 			return
