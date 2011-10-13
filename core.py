@@ -6,7 +6,7 @@ import datamodel as dm
 import fetch
 
 # fetcher constants, must be backed by cron.yaml (set it to fire each MIN_CYCLE secs)
-MIN_CYCLE   = 60 * 10               # most active streams
+MIN_CYCLE   = 60 * 60 * 1           # most active streams
 MAX_CYCLE   = 60 * 60 * 24          # most idle streams and friends list
 CYCLE_RATIO = MAX_CYCLE / MIN_CYCLE
 
