@@ -75,10 +75,19 @@ class XMPPHandler(webapp.RequestHandler):
 				message.reply("Delivery disabled!", raw_xml=False)
 			return
 
-		if message.body.lower() == 't': # test
-			message.reply(str(time.time()), raw_xml=False)
-			return
-		
+		if message.body[0:2].lower() == 's:' and jid == OWNER_JID: # system commands
+			if message.body[2:].lower() == 'cache_reset':
+				result = "Success!" if memcache.flush_all() else "Failed!"
+				message.reply(result, raw_xml=False)
+				return
+			if message.body[2:].lower() == 'cache_stats':
+				result = str(memcache.get_stats())
+				message.reply(result, raw_xml=False)
+				return
+			if message.body[2:].lower() == 'test':
+				message.reply(str(time.time()), raw_xml=False)
+				return
+				
 		self.help(message)
 		
 	def welcome(self, jid):
