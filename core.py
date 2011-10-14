@@ -65,7 +65,7 @@ def update_status(plus_id, has_new, timestamp):
 	if has_new:
 		freq = 1 # fetch plus account posts on next cycle if harvested at least one post during this cycle
 	else:
-		freq *= 2 # otherwise postpone the fetch gradually to maximum (once a day for now)
+		freq += 1 # otherwise postpone the fetch gradually to maximum (once a day for now); multiply by 2 is very aggresive, replaced with +1
 		if freq > CYCLE_RATIO:
 			freq = CYCLE_RATIO
 	
