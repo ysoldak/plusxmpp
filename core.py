@@ -4,6 +4,7 @@ from google.appengine.api import memcache
 
 import datamodel as dm
 import fetch
+import plusapi
 
 # fetcher constants, must be backed by cron.yaml (set it to fire each MIN_CYCLE secs)
 MIN_CYCLE   = 60 * 60 * 1           # most active streams
@@ -44,7 +45,8 @@ def get_posts(plus_id, timestamp):
 		if status['ts'] is not None and (status['ts'] + MIN_CYCLE * status['freq'] - 60) > timestamp: # "-60" in case GAE doesn't run cron sharp at time
 			return ''
 		oldest = timestamp - status['freq'] * MIN_CYCLE + 1 # "+1" to ensure we don't harvest any already processed post
-		posts = fetch.posts(plus_id, oldest, POST_LIMIT)
+		#posts = fetch.posts(plus_id, oldest, POST_LIMIT)
+		posts = plusapi.posts(plus_id, oldest, POST_LIMIT)
 		status = update_status(plus_id, posts != '', timestamp)
 		memcache.set('posts_' + plus_id, posts, timestamp + MIN_CYCLE - 2) # "-2" to ensure the cache is expired before next fetch cycle
 	return posts

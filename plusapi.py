@@ -1,4 +1,5 @@
 import logging
+import re
 import time
 
 from datetime import datetime
@@ -57,16 +58,13 @@ def posts(plus_id, timestamp, max_count):
 		if timestamp is not None and timestamp != 0 and post_updated_ts < timestamp:
 			break
 		
-		count = count + 1
-		if max_count is not None and max_count != 0 and count > max_count:
-			break
-		
-		title = post['title'].replace('\n','')
-		
 		output += author + ' @ ' + str(int((just_now - post_updated_ts)/60)) + ' mins ago\n'
+		title = post['title'].replace('\n','')
 		if title != "":
 			output += escape(title) + '\n'
 		output += post['url'] + '\n\n'
+		
+		count = count + 1
 		
 	logging.debug("Fetched posts " + plus_id + ": " + str(count))
 		
