@@ -34,9 +34,12 @@ def posts(plus_id, timestamp, max_count):
 	obj = simplejson.loads(result.content)
 	if not 'items' in obj:
 		return ''
-		
-	updated = datetime.strptime(obj['updated'], "%Y-%m-%dT%H:%M:%S.%fZ")
-	updated_ts = time.mktime(updated.timetuple())
+	
+	obj['updated'].replace("\.*", "")
+	
+	updated = re.sub(r'\..*', '', obj['updated'])
+	updated_dt = datetime.strptime(updated, "%Y-%m-%dT%H:%M:%S")
+	updated_ts = time.mktime(updated_dt.timetuple())
 	if timestamp is not None and timestamp != 0 and updated_ts < timestamp:
 		return ''
 	
@@ -50,8 +53,9 @@ def posts(plus_id, timestamp, max_count):
 	count = 0
 	for post in posts:
 		
-		post_updated = datetime.strptime(post['updated'], "%Y-%m-%dT%H:%M:%S.%fZ")
-		post_updated_ts = time.mktime(post_updated.timetuple())
+		post_updated = re.sub(r'\..*', '', post['updated'])		
+		post_updated_dt = datetime.strptime(post_updated, "%Y-%m-%dT%H:%M:%S")
+		post_updated_ts = time.mktime(post_updated_dt.timetuple())
 		if timestamp is not None and timestamp != 0 and post_updated_ts < timestamp:
 			break
 		
