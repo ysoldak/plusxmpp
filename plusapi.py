@@ -35,8 +35,6 @@ def posts(plus_id, timestamp, max_count):
 	if not 'items' in obj:
 		return ''
 	
-	obj['updated'].replace("\.*", "")
-	
 	updated = re.sub(r'\..*', '', obj['updated'])
 	updated_dt = datetime.strptime(updated, "%Y-%m-%dT%H:%M:%S")
 	updated_ts = time.mktime(updated_dt.timetuple())
