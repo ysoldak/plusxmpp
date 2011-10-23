@@ -18,6 +18,7 @@ def posts(plus_id, timestamp, max_count):
 	
 	just_now = time.time()
 	
+	# items(actor/displayName,title,updated,url,verb),title,updated
 	url = "https://www.googleapis.com/plus/v1/people/"+plus_id+"/activities/public?alt=json&maxResults="+str(max_count)+"&fields=items(actor%2FdisplayName%2Ctitle%2Cupdated%2Curl%2Cverb)%2Ctitle%2Cupdated&pp=1&key="+API_KEY
 	# logging.debug(url)
 	# return ''
@@ -58,11 +59,17 @@ def posts(plus_id, timestamp, max_count):
 		if timestamp is not None and timestamp != 0 and post_updated_ts < timestamp:
 			break
 		
-		output += author + ' @ ' + str(int((just_now - post_updated_ts)/60)) + ' mins ago\n'
+		h = int((just_now - post_updated_ts)/3600)
+		m = int((just_now - post_updated_ts)%3600/60)
+		t = str(h) + ' hours ' if  h > 0 else ''
+		t += str(m) + ' mins'
+		message = author + ' posted ' + t + ' ago\n'
 		title = post['title'].replace('\n','')
 		if title != "":
-			output += escape(title) + '\n'
-		output += post['url'] + '\n\n'
+			message += escape(title) + '\n'
+		message += post['url'] + '\n\n'
+		
+		output = message + output # reverses order of messages, so the latest is on top
 		
 		count = count + 1
 		
